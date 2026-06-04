@@ -1,0 +1,451 @@
+{
+  "info": {
+    "name": "Online Learning System API",
+    "description": "Backend API for Online Learning Platform - Challenges 1-3",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if server is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Database Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test-db",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test-db"]
+            },
+            "description": "Test connection to PostgreSQL database"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newstudent@example.com\",\n  \"name\": \"New Student\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('jwt_token', jsonData.data.access_token);",
+                  "  pm.environment.set('user_id', jsonData.data.user.id);",
+                  "  pm.environment.set('user_email', jsonData.data.user.email);",
+                  "  pm.environment.set('user_role', jsonData.data.user.role);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student1@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login and get JWT token. Token is auto-saved to jwt_token variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile (Protected)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Get current user profile (requires JWT token)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/courses?page=1&limit=10&status=published",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "published"
+                },
+                {
+                  "key": "search",
+                  "value": "Python",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get list of all courses with pagination and filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses", "1"]
+            },
+            "description": "Get course details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course (Instructor)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced Python Programming\",\n  \"description\": \"Master advanced Python concepts and design patterns\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/courses",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses"]
+            },
+            "description": "Create a new course (instructor/admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced Python - Updated\",\n  \"description\": \"Updated course description\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses", "1"]
+            },
+            "description": "Update course (only course creator or admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/courses/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses", "1"]
+            },
+            "description": "Delete a course (only creator or admin)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Classes",
+      "item": [
+        {
+          "name": "List Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes?page=1&limit=10&courseId=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "courseId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get list of all classes with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Class by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes", "1"]
+            },
+            "description": "Get class details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Class (Instructor)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": 1,\n  \"class_name\": \"Python 101 - Afternoon Session\",\n  \"start_date\": \"2026-06-01T14:00:00Z\",\n  \"end_date\": \"2026-08-01T16:00:00Z\",\n  \"max_students\": 25\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/classes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"]
+            },
+            "description": "Create a new class for a course"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Class",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"class_name\": \"Python 101 - Updated Name\",\n  \"max_students\": 35\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/classes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes", "1"]
+            },
+            "description": "Update class details"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Class",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes", "1"]
+            },
+            "description": "Delete a class"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_role",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

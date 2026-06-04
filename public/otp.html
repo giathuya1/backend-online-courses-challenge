@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify OTP - Online Learning System</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body{
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+    }
+    .form-container{
+      background:white;
+      padding:40px;
+      border-radius:12px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.2);
+      max-width:450px;
+      width:100%;
+    }
+    h1{ margin-bottom:10px; color:#333; text-align:center; }
+    .info{
+      text-align:center;
+      color:#666;
+      margin-bottom:8px;
+      font-size:14px;
+      line-height:1.6;
+    }
+    .email-badge{
+      display:block;
+      text-align:center;
+      margin:0 auto 24px;
+      background:#e8f5e9;
+      color:#2e7d32;
+      font-weight:700;
+      padding:6px 16px;
+      border-radius:20px;
+      font-size:14px;
+      width:fit-content;
+      word-break:break-all;
+    }
+    .form-group{ margin-bottom:20px; }
+    label{ display:block; margin-bottom:8px; color:#555; font-weight:600; }
+    input{
+      width:100%;
+      padding:14px;
+      border:2px solid #ddd;
+      border-radius:8px;
+      font-size:28px;
+      text-align:center;
+      letter-spacing:10px;
+      font-weight:bold;
+      color:#333;
+      transition:border-color .2s ease;
+    }
+    input:focus{ outline:none; border-color:#667eea; }
+    .button-group{
+      display:flex;
+      gap:10px;
+      margin-bottom:16px;
+    }
+    button{
+      flex:1;
+      padding:12px;
+      background:#2196F3;
+      color:white;
+      border:none;
+      border-radius:8px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:opacity .2s ease;
+    }
+    button:hover:not(:disabled){ opacity:.9; }
+    button:disabled{ background:#ccc; cursor:not-allowed; }
+    .resend-btn{ background:#FF9800; }
+    .error{
+      color:#d32f2f;
+      margin-top:8px;
+      padding:12px;
+      background:#ffebee;
+      border-radius:8px;
+      display:none;
+      line-height:1.6;
+      font-size:14px;
+    }
+    .info-msg{
+      color:#1565c0;
+      margin-top:8px;
+      padding:12px;
+      background:#e3f2fd;
+      border-radius:8px;
+      display:none;
+      line-height:1.6;
+      font-size:14px;
+      text-align:center;
+    }
+    .spam-note{
+      text-align:center;
+      font-size:12px;
+      color:#999;
+      margin-top:12px;
+    }
+
+    /* success popup */
+    .success-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.5);
+      z-index:1000;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+    }
+    .success-overlay.show{ display:flex; }
+    .success-box{
+      background:white;
+      border-radius:16px;
+      padding:40px 32px;
+      max-width:400px;
+      width:100%;
+      text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    }
+    .success-checkmark{ font-size:64px; display:block; margin-bottom:12px; }
+    .success-title{ font-size:22px; font-weight:800; color:#2e7d32; margin-bottom:10px; }
+    .success-body{ color:#555; font-size:15px; line-height:1.7; margin-bottom:20px; }
+    .redirect-label{ font-size:13px; color:#888; margin-bottom:6px; }
+    .redirect-bar-bg{
+      height:6px; background:#eee; border-radius:99px; overflow:hidden; margin-bottom:16px;
+    }
+    .redirect-bar{ height:100%; width:100%; background:linear-gradient(90deg,#4CAF50,#2e7d32); }
+    .go-home-btn{
+      width:100%;
+      padding:12px;
+      background:linear-gradient(135deg,#4CAF50,#2e7d32);
+      color:white;
+      border:none;
+      border-radius:8px;
+      font-size:15px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .go-home-btn:hover{ opacity:.92; }
+  </style>
+</head>
+<body>
+
+  <!-- SUCCESS POPUP -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+      <span class="success-checkmark">✅</span>
+      <div class="success-title">Tài khoản đã được kích hoạt!</div>
+      <div class="success-body">
+        Xác thực email thành công.<br />
+        Chào mừng bạn đến với <strong>Online Learning System</strong>!
+      </div>
+
+      <div class="redirect-label">
+        Tự động về trang chủ sau <span id="redirectNum">3</span>s...
+      </div>
+      <div class="redirect-bar-bg">
+        <div class="redirect-bar" id="redirectBar"></div>
+      </div>
+
+      <button class="go-home-btn" id="goHomeBtn">🏠 Về trang chủ ngay</button>
+    </div>
+  </div>
+
+  <!-- OTP FORM -->
+  <div class="form-container">
+    <h1>🔐 Verify Email</h1>
+    <div class="info">Nhập mã OTP 6 chữ số đã gửi đến:</div>
+    <span class="email-badge" id="emailBadge">your@email.com</span>
+
+    <form id="otpForm">
+      <div class="form-group">
+        <label>OTP Code</label>
+        <input
+          type="text"
+          id="otp"
+          maxlength="6"
+          required
+          placeholder="000000"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+      </div>
+
+      <div class="button-group">
+        <button type="submit" id="verifyBtn">Xác nhận</button>
+        <button type="button" id="resendBtn" class="resend-btn" disabled>Gửi lại (30s)</button>
+      </div>
+
+      <div id="errorDiv" class="error"></div>
+      <div id="infoDiv" class="info-msg"></div>
+    </form>
+
+    <div class="spam-note">
+      📌 Không thấy email? Kiểm tra thư mục <strong>Spam / Quảng cáo</strong>
+    </div>
+  </div>
+
+  <!-- CSP-safe external script -->
+  <script src="/js/otp.js" defer></script>
+</body>
+</html>

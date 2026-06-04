@@ -1,0 +1,29 @@
+{
+  "development": {
+    "username": "app",
+    "password": "app",
+    "database": "online_courses",
+    "host": "db",
+    "port": 5432,
+    "dialect": "postgres",
+    "logging": false
+  },
+  "test": {
+    "username": "app",
+    "password": "app",
+    "database": "online_courses",
+    "host": "db",
+    "port": 5432,
+    "dialect": "postgres",
+    "logging": false
+  },
+  "production": {
+    "username": "app",
+    "password": "app",
+    "database": "online_courses",
+    "host": "db",
+    "port": 5432,
+    "dialect": "postgres",
+    "logging": false
+  }
+}

@@ -1,0 +1,800 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Online Learning System API",
+    "description": "Backend API for Online Learning Platform - Challenges 1-3\n\n## Challenges Completed:\n- **Challenge 1**: Database Design (PostgreSQL, 7 tables, 3NF normalized)\n- **Challenge 2**: CRUD Operations (Courses & Classes)\n- **Challenge 3**: Authentication (Register, Login, JWT, Profile)\n\n## Features:\n- ✅ User Registration & Login with JWT\n- ✅ Role-based Authorization (admin, instructor, student)\n- ✅ Course Management (CRUD with instructor/admin)\n- ✅ Class Management (CRUD with pagination)\n- ✅ Pagination & Filtering\n- ✅ Error Handling & Validation\n- ✅ Logging & Monitoring\n\n## Test Credentials:\n- **Email**: student1@example.com\n- **Password**: password123\n- **Role**: student",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Server health check endpoints"
+    },
+    {
+      "name": "Authentication",
+      "description": "User registration, login, and profile management"
+    },
+    {
+      "name": "Courses",
+      "description": "Course CRUD operations"
+    },
+    {
+      "name": "Classes",
+      "description": "Class CRUD operations"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health Check",
+        "description": "Check if server is running",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Server is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Server is running"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/test-db": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Test Database Connection",
+        "description": "Test connection to PostgreSQL database",
+        "operationId": "testDatabase",
+        "responses": {
+          "200": {
+            "description": "Database connection successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "type": "string",
+                          "example": "online_learning"
+                        },
+                        "host": {
+                          "type": "string",
+                          "example": "localhost"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database connection failed"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register New User",
+        "description": "Register a new user account. User will have 'student' role by default.",
+        "operationId": "registerUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "name", "password", "confirmPassword"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "newstudent@example.com"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "New Student"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 6,
+                    "example": "password123"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["inactive", "active"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or email already exists"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login User",
+        "description": "Login and get JWT token. Token valid for 1 hour.",
+        "operationId": "loginUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "student1@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "access_token": {
+                          "type": "string",
+                          "description": "JWT token for Authorization header"
+                        },
+                        "expires_in": {
+                          "type": "string",
+                          "example": "1h"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": ["admin", "instructor", "student"]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password"
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get User Profile",
+        "description": "Get current user profile (requires JWT token)",
+        "operationId": "getProfile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "roles": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token"
+          }
+        }
+      }
+    },
+    "/api/courses": {
+      "get": {
+        "tags": ["Courses"],
+        "summary": "List Courses",
+        "description": "Get list of all courses with pagination and filtering",
+        "operationId": "listCourses",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "published"]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Courses retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "courses": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "instructor": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "email": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Courses"],
+        "summary": "Create Course",
+        "description": "Create a new course (instructor/admin only)",
+        "operationId": "createCourse",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description"],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Advanced Python Programming"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Master advanced Python concepts"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "published"],
+                    "default": "draft"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course created successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        }
+      }
+    },
+    "/api/courses/{id}": {
+      "get": {
+        "tags": ["Courses"],
+        "summary": "Get Course by ID",
+        "operationId": "getCourseById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course retrieved"
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Courses"],
+        "summary": "Update Course",
+        "operationId": "updateCourse",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "published"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Course updated"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Courses"],
+        "summary": "Delete Course",
+        "operationId": "deleteCourse",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course deleted"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        }
+      }
+    },
+    "/api/classes": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "List Classes",
+        "operationId": "listClasses",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classes retrieved"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Classes"],
+        "summary": "Create Class",
+        "operationId": "createClass",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["course_id", "class_name", "start_date", "end_date"],
+                "properties": {
+                  "course_id": {
+                    "type": "integer"
+                  },
+                  "class_name": {
+                    "type": "string"
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "max_students": {
+                    "type": "integer",
+                    "default": 30
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Class created"
+          }
+        }
+      }
+    },
+    "/api/classes/{id}": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "Get Class by ID",
+        "operationId": "getClassById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Class retrieved"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Classes"],
+        "summary": "Update Class",
+        "operationId": "updateClass",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "class_name": {
+                    "type": "string"
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "max_students": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Class updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Classes"],
+        "summary": "Delete Class",
+        "operationId": "deleteClass",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Class deleted"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token received from /api/auth/login endpoint"
+      }
+    }
+  }
+}

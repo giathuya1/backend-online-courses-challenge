@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Online Learning System</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display:flex; justify-content:center; align-items:center;
+      padding:20px;
+    }
+    .form-container {
+      background:#fff;
+      padding:40px;
+      border-radius:12px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.2);
+      max-width:450px; width:100%;
+    }
+    h1 { margin-bottom:30px; color:#333; text-align:center; }
+    .form-group { margin-bottom:20px; }
+    label { display:block; margin-bottom:8px; color:#555; font-weight:600; }
+    input {
+      width:100%;
+      padding:12px;
+      border:2px solid #ddd;
+      border-radius:8px;
+      font-size:16px;
+    }
+    input:focus { outline:none; border-color:#667eea; }
+    button {
+      width:100%;
+      padding:12px;
+      background:#4CAF50;
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      font-size:16px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button:hover { background:#45a049; }
+    .error {
+      color:#d32f2f;
+      margin-top:10px;
+      padding:12px;
+      background:#ffebee;
+      border-radius:8px;
+      display:none;
+      line-height:1.6;
+    }
+    .success {
+      color:#388e3c;
+      margin-top:10px;
+      padding:12px;
+      background:#e8f5e9;
+      border-radius:8px;
+      display:none;
+      line-height:1.6;
+    }
+    .link { text-align:center; margin-top:20px; }
+    .link a { color:#667eea; text-decoration:none; font-weight:600; }
+    .link a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>📝 Create Account</h1>
+    <form id="registerForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Username (for login)</label>
+        <input type="text" id="username" required placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="name" required placeholder="Your Full Name" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword" required placeholder="Confirm your password" autocomplete="new-password">
+      </div>
+
+      <button type="submit">Register</button>
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
+    </form>
+
+    <div class="link">
+      Already have account? <a href="/login.html">Login here</a>
+    </div>
+  </div>
+
+  <script src="/js/register.js" defer></script>
+</body>
+</html>

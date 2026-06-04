@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Home - Online Learning</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div id="app-navbar"></div>
+
+  <main class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h1 class="h3 mb-1">Home</h1>
+        <div class="text-muted">Public listing of courses & classes</div>
+      </div>
+      <a class="btn btn-outline-secondary" href="/index.html">Back</a>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-8">
+            <input id="search" class="form-control" placeholder="Search courses by title..." />
+          </div>
+          <div class="col-md-4 d-grid">
+            <button id="btnLoad" class="btn btn-primary">Load</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header fw-bold">Courses</div>
+          <div class="card-body">
+            <div id="courses" class="d-grid gap-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header fw-bold">Classes</div>
+          <div class="card-body">
+            <div id="classes" class="d-grid gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    DemoUI.mountNavbar();
+
+    const $courses = document.getElementById('courses');
+    const $classes = document.getElementById('classes');
+    const $search = document.getElementById('search');
+
+    function courseCard(x) {
+      const el = document.createElement('div');
+      el.className = 'border rounded p-3 bg-white';
+      el.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-bold">${x.title}</div>
+            <div class="text-muted small">id=${x.id} • status=${x.status || ''}</div>
+          </div>
+        </div>
+        <div class="mt-2">${x.description || ''}</div>
+      `;
+      return el;
+    }
+
+    function classCard(x) {
+      const el = document.createElement('div');
+      el.className = 'border rounded p-3 bg-white';
+      el.innerHTML = `
+        <div class="fw-bold">${x.class_name || x.className || 'Class'}</div>
+        <div class="text-muted small">id=${x.id} • course_id=${x.course_id} • instructor_id=${x.instructor_id}</div>
+        <div class="mt-2 small">start: ${x.start_date || ''} → end: ${x.end_date || ''}</div>
+      `;
+      return el;
+    }
+
+    async function load() {
+      $courses.innerHTML = '<div class="text-muted">Loading...</div>';
+      $classes.innerHTML = '<div class="text-muted">Loading...</div>';
+
+      const search = $search.value.trim();
+      const qs = new URLSearchParams();
+      if (search) qs.set('search', search);
+      qs.set('page', '1');
+      qs.set('limit', '20');
+
+      const c = await DemoApi.apiFetch('/api/courses?' + qs.toString(), { method: 'GET' });
+      const courses = c?.data?.courses || [];
+      $courses.innerHTML = '';
+      courses.forEach(x => $courses.appendChild(courseCard(x)));
+      if (!courses.length) $courses.innerHTML = '<div class="text-muted"><i>No courses</i></div>';
+
+      const k = await DemoApi.apiFetch('/api/classes?page=1&limit=20', { method: 'GET' });
+      const classes = k?.data?.classes || [];
+      $classes.innerHTML = '';
+      classes.forEach(x => $classes.appendChild(classCard(x)));
+      if (!classes.length) $classes.innerHTML = '<div class="text-muted"><i>No classes</i></div>';
+    }
+
+    document.getElementById('btnLoad').addEventListener('click', () => {
+      load().catch(e => {
+        $courses.innerHTML = `<pre>${e.message}</pre>`;
+        $classes.innerHTML = `<pre>${e.message}</pre>`;
+      });
+    });
+
+    load().catch(e => {
+      $courses.innerHTML = `<pre>${e.message}</pre>`;
+      $classes.innerHTML = `<pre>${e.message}</pre>`;
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

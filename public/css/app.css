@@ -1,0 +1,31 @@
+:root {
+    --bg: #f6f7fb;
+  }
+  
+  body {
+    background: var(--bg);
+  }
+  
+  .app-shell {
+    min-height: 100vh;
+  }
+  
+  .page-title {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  
+  .page-title h1 {
+    margin: 0;
+  }
+  
+  .card-soft {
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 8px 24px rgba(18, 38, 63, .06);
+  }
+  
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
