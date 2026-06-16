@@ -6,14 +6,11 @@ import ApiResponse from '../utils/response';
 import logger from '../utils/logger';
 import db from '../database/connection';
 import { parseCsvBuffer, toCsvStreamRow } from '../services/csv.service';
+import { isValidEmail } from '../validators/common.validator';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const { User: Users, Course: Courses, sequelize } = db;
-
-function isValidEmail(email: string): boolean {
-  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 /**
  * @openapi
