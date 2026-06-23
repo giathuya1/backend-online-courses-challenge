@@ -1,5 +1,4 @@
 // src/providers/auth.provider.ts
-// Pure business logic — no Express imports.
 
 import bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
@@ -8,6 +7,7 @@ import JwtService from '../utils/jwt';
 import EmailService from '../utils/email';
 import OtpService from '../utils/otp';
 import logger from '../utils/logger';
+import { normalizeEmail } from '../validators/common.validator';
 import { RegisterRequestBody, LoginRequestBody, VerifyOtpBody } from '../types/api.types';
 
 const { User, UserAuth, UserRole, Role } = db;
@@ -41,7 +41,8 @@ async function tryEmail(fn: () => Promise<unknown>, label: string): Promise<void
 export const AuthProvider = {
 
   async register(body: RegisterRequestBody) {
-    const { email, username, name, password } = body;
+    const email = normalizeEmail(body.email);
+    const { username, name, password } = body;
 
     // Check uniqueness in parallel — saves one round-trip
     const [existingEmail, existingUsername] = await Promise.all([
@@ -133,11 +134,12 @@ export const AuthProvider = {
   },
 
   async login(body: LoginRequestBody) {
-    const { email, password } = body;
+    const { password } = body;
+    const identifier = body.email.trim();
 
-    // Single query: match either email or username
+    // Single query: match either email (case-insensitive) or username (as-is)
     const user = await User.findOne({
-      where: { [Op.or]: [{ email }, { username: email }] },
+      where: { [Op.or]: [{ email: normalizeEmail(identifier) }, { username: identifier }] },
     });
     if (!user) throw { statusCode: 401, message: 'Invalid email/username or password' };
     if (user.status !== 'active') throw { statusCode: 401, message: 'Account not verified.' };
@@ -150,7 +152,7 @@ export const AuthProvider = {
 
     const role  = await getUserRole(user.id);
     const token = JwtService.generateToken(user.id, user.email, role);
-    logger.info('User logged in', { userId: user.id, email });
+    logger.info('User logged in', { userId: user.id, email: user.email });
 
     return {
       access_token: token,

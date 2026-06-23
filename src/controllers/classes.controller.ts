@@ -2,15 +2,10 @@
 
 import { Request, Response, NextFunction } from 'express';
 import ApiResponse from '../utils/response';
+import { handleControllerError } from '../utils/handleControllerError';
 import { ClassesProvider } from '../providers/classes.provider';
 import { validateCreateClass, validateUpdateClass } from '../validators/classes.validator';
 import { CreateClassBody, BulkEnrollBody } from '../types/api.types';
-
-function handleError(err: any, res: Response, next: NextFunction) {
-  if (err.violations) return res.status(err.statusCode ?? 400).json(ApiResponse.validationError(err.violations));
-  if (err.statusCode) return res.status(err.statusCode).json(ApiResponse.error(err.message));
-  return next(err);
-}
 
 // ─── GET /api/classes ─────────────────────────────────────────────────────────
 /**
@@ -34,7 +29,7 @@ export async function listClasses(req: Request, res: Response, next: NextFunctio
       limit:    req.query.limit   as string | undefined,
     });
     return res.status(200).json(ApiResponse.success('Classes retrieved', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── GET /api/classes/:id ─────────────────────────────────────────────────────
@@ -54,7 +49,7 @@ export async function getClass(req: Request, res: Response, next: NextFunction) 
   try {
     const data = await ClassesProvider.getById(Number(req.params.id));
     return res.status(200).json(ApiResponse.success('Class retrieved', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── POST /api/classes ────────────────────────────────────────────────────────
@@ -91,7 +86,7 @@ export async function createClass(
   try {
     const data = await ClassesProvider.create(req.body, req.user!.id);
     return res.status(201).json(ApiResponse.success('Class created', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── POST /api/classes/:id/bulk-enroll ───────────────────────────────────────
@@ -100,7 +95,8 @@ export async function createClass(
  * /api/classes/{id}/bulk-enroll:
  *   post:
  *     tags: [Classes]
- *     summary: Bulk-enroll students by email list (instructor/admin)
+ *     summary: Bulk-enroll students by email list (instructor/admin). Each
+ *       student receives an enrollment confirmation email.
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - { in: path, name: id, required: true, schema: { type: integer } }
@@ -135,7 +131,7 @@ export async function bulkEnroll(
   try {
     const data = await ClassesProvider.bulkEnroll(classId, emails, req.user!.id, req.user!.role);
     return res.status(201).json(ApiResponse.success('Bulk enrolled', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── PUT /api/classes/:id ─────────────────────────────────────────────────────
@@ -157,7 +153,7 @@ export async function updateClass(req: Request, res: Response, next: NextFunctio
   try {
     const data = await ClassesProvider.update(Number(req.params.id), req.body, req.user!.id, req.user!.role);
     return res.status(200).json(ApiResponse.success('Class updated', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── DELETE /api/classes/:id ──────────────────────────────────────────────────
@@ -177,5 +173,5 @@ export async function deleteClass(req: Request, res: Response, next: NextFunctio
   try {
     await ClassesProvider.remove(Number(req.params.id), req.user!.id, req.user!.role);
     return res.status(200).json(ApiResponse.success('Class deleted'));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }

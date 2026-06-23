@@ -31,12 +31,13 @@ function handleProviderError(err: any, res: Response, next: NextFunction) {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, username, name, password]
+ *             required: [email, username, name, password, confirmPassword]
  *             properties:
- *               email:    { type: string, example: "user@example.com" }
- *               username: { type: string, example: "johndoe" }
- *               name:     { type: string, example: "John Doe" }
- *               password: { type: string, example: "SecurePass123" }
+ *               email:           { type: string, example: "user@example.com" }
+ *               username:        { type: string, example: "johndoe" }
+ *               name:            { type: string, example: "John Doe" }
+ *               password:        { type: string, example: "SecurePass123" }
+ *               confirmPassword: { type: string, example: "SecurePass123" }
  *     responses:
  *       201: { description: Registered — OTP sent }
  *       400: { description: Validation error }

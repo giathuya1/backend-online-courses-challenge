@@ -11,6 +11,8 @@ import swaggerUi from 'swagger-ui-express';
 
 import { createSwaggerSpec } from './utils/swagger';
 import { scheduleDailyJob } from './services/cron.service';
+import logger from './utils/logger';
+import { AppError } from './utils/errors';
 
 const app = express();
 
@@ -51,6 +53,7 @@ import coursesRouter from './routes/courses';
 import classesRouter from './routes/classes';
 import enrollmentsRouter from './routes/enrollments';
 import rolesRouter from './routes/roles';
+import statsRouter from './routes/stats';
 import cronRouter from './routes/cron';
 import healthRouter from './routes/health';
 import testDbRouter from './routes/test-db';
@@ -61,6 +64,7 @@ app.use('/api/courses', coursesRouter);
 app.use('/api/classes', classesRouter);
 app.use('/api/enrollments', enrollmentsRouter);
 app.use('/api/roles', rolesRouter);
+app.use('/api/stats', statsRouter);
 app.use('/api/cron', cronRouter);
 app.use('/health', healthRouter);
 app.use('/api/test-db', testDbRouter);
@@ -74,9 +78,19 @@ app.use((_req: Request, res: Response) => {
 });
 
 // ─── Error Handler ────────────────────────────────────────────────────────────
+// Last-resort handler — only reached if a controller forgot to catch/forward
+// an error, or something throws outside the try/catch (e.g. a sync bug).
+// Known AppError instances are logged at `warn` (expected 4xx); anything
+// else is logged at `error` with the full stack since it's unexpected.
 app.use((err: Error & { statusCode?: number; status?: number }, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  const status = err.statusCode || err.status || 500;
+  const status = err instanceof AppError ? err.statusCode : (err.statusCode || err.status || 500);
+
+  if (status >= 500) {
+    logger.error('Unhandled error', { message: err.message, stack: err.stack });
+  } else {
+    logger.warn('Unhandled client error', { message: err.message, status });
+  }
+
   res.status(status).json({ success: false, message: err.message || 'Internal server error' });
 });
 

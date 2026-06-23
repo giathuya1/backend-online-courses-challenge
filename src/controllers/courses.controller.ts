@@ -2,15 +2,11 @@
 
 import { Request, Response, NextFunction } from 'express';
 import ApiResponse from '../utils/response';
+import { handleControllerError } from '../utils/handleControllerError';
 import { CoursesProvider } from '../providers/courses.provider';
 import { validateCreateCourse, validateUpdateCourse } from '../validators/courses.validator';
 import { validPagination } from '../validators/common.validator';
 import { CourseQueryParams, CreateCourseBody, UpdateCourseBody } from '../types/api.types';
-
-function handleError(err: any, res: Response, next: NextFunction) {
-  if (err.statusCode) return res.status(err.statusCode).json(ApiResponse.error(err.message));
-  return next(err);
-}
 
 // ─── GET /api/courses ─────────────────────────────────────────────────────────
 /**
@@ -41,7 +37,7 @@ export async function listCourses(
   try {
     const data = await CoursesProvider.list(req.query);
     return res.status(200).json(ApiResponse.success('Courses retrieved', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── GET /api/courses/:id ─────────────────────────────────────────────────────
@@ -61,7 +57,7 @@ export async function getCourse(req: Request, res: Response, next: NextFunction)
   try {
     const data = await CoursesProvider.getById(Number(req.params.id));
     return res.status(200).json(ApiResponse.success('Course retrieved', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── POST /api/courses ────────────────────────────────────────────────────────
@@ -96,7 +92,7 @@ export async function createCourse(
   try {
     const data = await CoursesProvider.create(req.body, req.user!.id);
     return res.status(201).json(ApiResponse.success('Course created', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── PUT /api/courses/:id ─────────────────────────────────────────────────────
@@ -123,7 +119,7 @@ export async function updateCourse(
   try {
     const data = await CoursesProvider.update(Number(req.params.id), req.body, req.user!.id, req.user!.role);
     return res.status(200).json(ApiResponse.success('Course updated', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── DELETE /api/courses/:id ──────────────────────────────────────────────────
@@ -143,5 +139,5 @@ export async function deleteCourse(req: Request, res: Response, next: NextFuncti
   try {
     await CoursesProvider.remove(Number(req.params.id), req.user!.id, req.user!.role);
     return res.status(200).json(ApiResponse.success('Course deleted'));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }

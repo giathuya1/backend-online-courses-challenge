@@ -3,6 +3,7 @@
 import { Op } from 'sequelize';
 import db from '../database/connection';
 import logger from '../utils/logger';
+import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { CreateCourseBody, UpdateCourseBody, CourseQueryParams } from '../types/api.types';
 
 const { Course, User } = db;
@@ -40,7 +41,7 @@ export const CoursesProvider = {
 
   async getById(id: number) {
     const course = await Course.findByPk(id, { include: [INSTRUCTOR_INCLUDE] });
-    if (!course) throw { statusCode: 404, message: 'Course not found' };
+    if (!course) throw new NotFoundError('Course not found');
     return course;
   },
 
@@ -57,9 +58,9 @@ export const CoursesProvider = {
 
   async update(id: number, body: UpdateCourseBody, userId: number, role: string) {
     const course = await Course.findByPk(id);
-    if (!course) throw { statusCode: 404, message: 'Course not found' };
+    if (!course) throw new NotFoundError('Course not found');
     if (course.instructor_id !== userId && role !== 'admin')
-      throw { statusCode: 403, message: 'Not authorized' };
+      throw new ForbiddenError('Not authorized');
 
     await course.update({
       title:       body.title       ?? course.title,
@@ -72,9 +73,9 @@ export const CoursesProvider = {
 
   async remove(id: number, userId: number, role: string) {
     const course = await Course.findByPk(id);
-    if (!course) throw { statusCode: 404, message: 'Course not found' };
+    if (!course) throw new NotFoundError('Course not found');
     if (course.instructor_id !== userId && role !== 'admin')
-      throw { statusCode: 403, message: 'Not authorized' };
+      throw new ForbiddenError('Not authorized');
 
     await course.destroy();
     logger.info('Course deleted', { courseId: id });

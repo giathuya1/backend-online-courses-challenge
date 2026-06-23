@@ -13,8 +13,21 @@ export const isString  = (v: unknown): v is string  => typeof v === 'string';
 export const isNumber  = (v: unknown): v is number  => typeof v === 'number' && Number.isFinite(v);
 export const isArray   = (v: unknown): v is unknown[] => Array.isArray(v);
 
+// Stricter than a bare "has @ and ." check — blocks consecutive dots,
+// leading/trailing dots, domain labels starting/ending with '-', missing
+// local-part or domain, etc. Still not full RFC 5322 (that's overkill for
+// app-level validation), but rejects the obviously-malformed cases the old
+// regex let through.
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
 export const isValidEmail = (email: unknown): boolean =>
-  isString(email) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  isString(email) && EMAIL_REGEX.test(email.trim());
+
+// Use this before comparing/storing emails (register, login, bulk-enroll)
+// so "User@Gmail.com" and "user@gmail.com" are always treated as the same
+// address instead of silently becoming two different accounts.
+export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 export const isValidDate = (d: unknown): boolean =>
   isString(d) && !isNaN(Date.parse(d));
