@@ -1,7 +1,7 @@
 // src/validators/auth.validator.ts
 
 import { FieldValidator, ValidationViolation } from './common.validator';
-import { RegisterRequestBody, LoginRequestBody, VerifyOtpBody } from '../types/api.types';
+import { RegisterRequestBody, LoginRequestBody, VerifyOtpBody, RefreshTokenBody } from '../types/api.types';
 
 export const validateRegister = (body: Partial<RegisterRequestBody>): ValidationViolation[] => {
   const violations: ValidationViolation[] = [
@@ -12,9 +12,6 @@ export const validateRegister = (body: Partial<RegisterRequestBody>): Validation
     ...new FieldValidator(body.confirmPassword,  'confirmPassword').required().violations,
   ];
 
-  // Cross-field: confirmPassword must match password.
-  // Only check once the individual fields are themselves valid, same
-  // pattern used for start_date/end_date in classes.validator.ts.
   if (violations.length === 0 && body.password !== body.confirmPassword) {
     violations.push({ field: 'confirmPassword', rule: 'match', message: 'confirmPassword must match password' });
   }
@@ -29,4 +26,9 @@ export const validateLogin = (body: Partial<LoginRequestBody>): ValidationViolat
 
 export const validateVerifyOtp = (body: Partial<VerifyOtpBody>): ValidationViolation[] => [
   ...new FieldValidator(body.otp, 'otp').required().minLength(6).maxLength(6).violations,
+];
+
+// ─── NEW: refresh-token validator ──────────────────────────────────────────
+export const validateRefreshToken = (body: Partial<RefreshTokenBody>): ValidationViolation[] => [
+  ...new FieldValidator(body.refresh_token, 'refresh_token').required().violations,
 ];

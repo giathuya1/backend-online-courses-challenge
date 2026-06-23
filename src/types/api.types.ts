@@ -90,3 +90,19 @@ export interface PaginatedResult<T> {
   data: T[];
   pagination: PaginationMeta;
 }
+
+
+// src/types/api.types.ts (ADDITIONS — append to the existing file)
+// Paste these into your current src/types/api.types.ts; everything else
+// in that file stays exactly as-is.
+
+export interface RefreshTokenBody {
+  refresh_token: string;
+}
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  expires_in: string;
+}
+

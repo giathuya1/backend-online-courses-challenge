@@ -1,17 +1,18 @@
 // src/controllers/enrollments.controller.ts
+//
+// CHANGED vs. original: dropped the local `handleError()` helper — same
+// reasoning as roles.controller.ts. enrollments.provider.ts now throws
+// NotFoundError/BadRequestError/ForbiddenError, so the shared
+// handleControllerError covers every case without a local duplicate.
 
 import { Request, Response, NextFunction } from 'express';
 import ApiResponse from '../utils/response';
+import { handleControllerError } from '../utils/handleControllerError';
 import { EnrollmentsProvider } from '../providers/enrollments.provider';
 import { FieldValidator } from '../validators/common.validator';
 import { EnrollBody, UpdateEnrollmentStatusBody, EnrollmentStatus } from '../types/api.types';
 
 const VALID_STATUSES: EnrollmentStatus[] = ['active', 'dropped', 'suspended'];
-
-function handleError(err: any, res: Response, next: NextFunction) {
-  if (err.statusCode) return res.status(err.statusCode).json(ApiResponse.error(err.message));
-  return next(err);
-}
 
 // ─── POST /api/enrollments ────────────────────────────────────────────────────
 /**
@@ -46,7 +47,7 @@ export async function enroll(
   try {
     const data = await EnrollmentsProvider.enroll(req.user!.id, req.body.class_id);
     return res.status(201).json(ApiResponse.success('Enrolled successfully', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── GET /api/enrollments ─────────────────────────────────────────────────────
@@ -74,7 +75,7 @@ export async function listEnrollments(req: Request, res: Response, next: NextFun
       req.user!.role,
     );
     return res.status(200).json(ApiResponse.success('Enrollments retrieved', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── DELETE /api/enrollments/:id ──────────────────────────────────────────────
@@ -95,7 +96,7 @@ export async function dropEnrollment(req: Request, res: Response, next: NextFunc
   try {
     await EnrollmentsProvider.drop(Number(req.params.id), req.user!.id, req.user!.role);
     return res.status(200).json(ApiResponse.success('Dropped class successfully'));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }
 
 // ─── PUT /api/enrollments/:id/status ─────────────────────────────────────────
@@ -137,5 +138,5 @@ export async function updateEnrollmentStatus(
       req.user!.role,
     );
     return res.status(200).json(ApiResponse.success('Enrollment status updated', data));
-  } catch (err: any) { return handleError(err, res, next); }
+  } catch (err: any) { return handleControllerError(err, res, next); }
 }

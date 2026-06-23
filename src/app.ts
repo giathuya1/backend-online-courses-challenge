@@ -4,15 +4,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 
 import { createSwaggerSpec } from './utils/swagger';
 import { scheduleDailyJob } from './services/cron.service';
-import logger from './utils/logger';
-import { AppError } from './utils/errors';
+import errorHandler from './middleware/errorHandler';
 
 const app = express();
 
@@ -77,22 +76,15 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ success: false, message: 'Not found' });
 });
 
-// ─── Error Handler ────────────────────────────────────────────────────────────
-// Last-resort handler — only reached if a controller forgot to catch/forward
-// an error, or something throws outside the try/catch (e.g. a sync bug).
-// Known AppError instances are logged at `warn` (expected 4xx); anything
-// else is logged at `error` with the full stack since it's unexpected.
-app.use((err: Error & { statusCode?: number; status?: number }, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err instanceof AppError ? err.statusCode : (err.statusCode || err.status || 500);
-
-  if (status >= 500) {
-    logger.error('Unhandled error', { message: err.message, stack: err.stack });
-  } else {
-    logger.warn('Unhandled client error', { message: err.message, status });
-  }
-
-  res.status(status).json({ success: false, message: err.message || 'Internal server error' });
-});
+// ─── Global Error Handler ────────────────────────────────────────────────────
+// CHANGED vs. original: the old app.ts had its error-formatting logic
+// written inline, duplicating handleControllerError.ts's branching almost
+// exactly. Now it's one shared module (middleware/errorHandler.ts) used as
+// the LAST-RESORT handler — reached only if a controller forgot to
+// catch/forward an error, or something throws outside try/catch. Every
+// expected error path (validation, not-found, forbidden, etc.) is already
+// handled per-request by handleControllerError before it ever gets here.
+app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT) || 5000;

@@ -1,13 +1,22 @@
 // src/utils/email.ts
+// Transport-layer adapter: ONLY knows how to send an email via nodemailer.
+// Decides nothing about WHO to email or WHEN — that's the service layer's
+// job (see services/class.service.ts calling EmailService.trySend()).
+
 import nodemailer from 'nodemailer';
 import logger from './logger';
+import {
+  otpEmailTemplate,
+  welcomeEmailTemplate,
+  enrollmentConfirmationTemplate,
+} from '../templates/email.templates';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
 transporter.verify((error) => {
@@ -22,53 +31,64 @@ transporter.verify((error) => {
 
 class EmailService {
   static async sendOtpEmail(email: string, otp: string, userName: string): Promise<boolean> {
-    const htmlContent = `
-      <html><body style="font-family:Arial,sans-serif;background:#f5f5f5;">
-        <div style="max-width:600px;margin:0 auto;background:white;padding:20px;border-radius:8px;">
-          <h1 style="color:#333;">🔐 Verify Your Email</h1>
-          <p>Hi ${userName},</p>
-          <p>Your OTP is:</p>
-          <div style="background:#007bff;color:white;padding:20px;border-radius:8px;text-align:center;">
-            <h2 style="margin:0;font-size:48px;letter-spacing:5px;">${otp}</h2>
-          </div>
-          <p style="color:#d32f2f;font-weight:bold;">⏰ Expires in 5 minutes.</p>
-        </div>
-      </body></html>`;
-
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
       subject: '🔐 Verify Your Email - Online Learning System',
-      html: htmlContent
+      html: otpEmailTemplate(otp, userName),
     });
     logger.info('OTP email sent', { email, messageId: info.messageId });
     return true;
   }
 
   static async sendWelcomeEmail(email: string, userName: string): Promise<boolean> {
-    try {
-      const htmlContent = `
-        <html><body style="font-family:Arial,sans-serif;">
-          <div style="max-width:600px;margin:0 auto;padding:20px;">
-            <h1>✅ Welcome to Online Learning System! 🎉</h1>
-            <p>Hi ${userName}, your account is now active.</p>
-            <p><a href="${process.env.APP_URL || 'http://localhost:5000'}/login.html"
-              style="background:#007bff;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">
-              Start Learning</a></p>
-          </div>
-        </body></html>`;
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: '✅ Welcome to Online Learning System',
+      html: welcomeEmailTemplate(userName, process.env.APP_URL || 'http://localhost:5000'),
+    });
+    logger.info('Welcome email sent', { email, messageId: info.messageId });
+    return true;
+  }
 
-      const info = await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: email,
-        subject: '✅ Welcome to Online Learning System',
-        html: htmlContent
-      });
-      logger.info('Welcome email sent', { email, messageId: info.messageId });
-      return true;
-    } catch (error) {
-      logger.error('Failed to send welcome email', { email, error: (error as Error).message });
-      return false;
+  /**
+   * FIX: this method was called by classes.provider.ts's bulkEnroll() in
+   * the original codebase but never actually existed in email.ts — the
+   * first real bulk-enroll request would have thrown
+   * "EmailService.sendEnrollmentConfirmationEmail is not a function".
+   */
+  static async sendEnrollmentConfirmationEmail(
+    email: string,
+    studentName: string,
+    className: string,
+    courseTitle?: string,
+  ): Promise<boolean> {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: `🎓 You're enrolled in ${className}`,
+      html: enrollmentConfirmationTemplate(studentName, className, courseTitle),
+    });
+    logger.info('Enrollment confirmation email sent', { email, messageId: info.messageId });
+    return true;
+  }
+
+  /**
+   * Fire-and-forget wrapper: send an email but never let a failure (bad
+   * SMTP creds, network blip, invalid address...) bubble up and crash a
+   * request that has already succeeded otherwise — e.g. don't fail a
+   * bulk-enroll transaction just because one confirmation email bounced.
+   *
+   * Previously duplicated as a private `tryEmail()` function inside
+   * auth.provider.ts; centralized here so EVERY caller (auth, classes,
+   * future modules) behaves identically and logs in the same format.
+   */
+  static async trySend(fn: () => Promise<unknown>, label: string): Promise<void> {
+    try {
+      await fn();
+    } catch (e) {
+      logger.warn(`Email failed [${label}]`, { error: (e as Error).message });
     }
   }
 }

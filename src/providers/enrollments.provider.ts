@@ -1,7 +1,16 @@
 // src/providers/enrollments.provider.ts
+//
+// CHANGED vs. original: every `throw { statusCode, message }` is replaced
+// with the matching class from utils/errors.ts (NotFoundError,
+// BadRequestError, ForbiddenError). Same reasoning as roles.provider.ts —
+// this lets handleControllerError (and the global errorHandler) recognize
+// the error via `instanceof` instead of duck-typing `err.statusCode`, and
+// keeps every provider/service in the codebase throwing the same error
+// vocabulary.
 
 import db from '../database/connection';
 import logger from '../utils/logger';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { EnrollmentStatus } from '../types/api.types';
 
 const { Enrollment, Class, Course, User } = db;
@@ -28,12 +37,12 @@ export const EnrollmentsProvider = {
       Enrollment.findOne({ where: { user_id: userId, class_id: classId } }),
     ]);
 
-    if (!classRecord) throw { statusCode: 404, message: 'Class not found' };
-    if (existing)     throw { statusCode: 400, message: 'Already enrolled in this class' };
+    if (!classRecord) throw new NotFoundError('Class not found');
+    if (existing)     throw new BadRequestError('Already enrolled in this class');
 
     const enrollmentCount = await Enrollment.count({ where: { class_id: classId } });
     if (enrollmentCount >= classRecord.max_students)
-      throw { statusCode: 400, message: 'Class is full' };
+      throw new BadRequestError('Class is full');
 
     const enrollment = await Enrollment.create({ user_id: userId, class_id: classId, status: 'active' });
     logger.info('Student enrolled', { userId, classId, enrollmentId: enrollment.id });
@@ -79,9 +88,9 @@ export const EnrollmentsProvider = {
 
   async drop(enrollmentId: number, userId: number, role: string) {
     const enrollment = await Enrollment.findByPk(enrollmentId);
-    if (!enrollment) throw { statusCode: 404, message: 'Enrollment not found' };
+    if (!enrollment) throw new NotFoundError('Enrollment not found');
     if (enrollment.user_id !== userId && role !== 'admin')
-      throw { statusCode: 403, message: 'Not authorized' };
+      throw new ForbiddenError('Not authorized');
 
     await enrollment.destroy();
     logger.info('Student dropped class', { userId: enrollment.user_id, classId: enrollment.class_id });
@@ -91,9 +100,9 @@ export const EnrollmentsProvider = {
     const enrollment = await Enrollment.findByPk(enrollmentId, {
       include: [{ model: Class, attributes: ['instructor_id'] }],
     });
-    if (!enrollment) throw { statusCode: 404, message: 'Enrollment not found' };
+    if (!enrollment) throw new NotFoundError('Enrollment not found');
     if ((enrollment as any).class?.instructor_id !== userId && role !== 'admin')
-      throw { statusCode: 403, message: 'Not authorized' };
+      throw new ForbiddenError('Not authorized');
 
     await enrollment.update({ status });
     logger.info('Enrollment status updated', { enrollmentId, newStatus: status });
